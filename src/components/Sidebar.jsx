@@ -26,7 +26,7 @@ export default function Sidebar() {
         {!collapsed && (
           <div>
             <div className="workspac p-3 flex justify-between border-b border-b-[#9fadbc29]">
-              <h4>Remote Dev 's workspace</h4>
+              <h4>Dev workspace</h4>
               <button
                 onClick={() => setCollapsed(!collapsed)}
                 className="hover:bg-slate-600 rounded-sm p-1"
