@@ -1,43 +1,191 @@
-import { MoreHorizontal, UserPlus, Edit2 } from 'react-feather';
+import { MoreHorizontal, UserPlus, Edit2, Plus } from 'react-feather';
+import { useState } from 'react';
 
-export default function Main() {
+export default function Main({convenios}) {
+  const [columns, setColumns] = useState([
+   
+    { id: 'a_atender', title: 'A ATENDER', cards: [] },
+    { id: 'atendidos', title: 'ATENDIDOS', cards: [] },
+    { id: 'agendados', title: 'AGENDADOS', cards: [] },
+    { id: 'cancelado', title: 'CANCELADOS', cards: [] },
+  ]);
+
+  const [showModal, setShowModal] = useState(false);
+  const [editingCard, setEditingCard] = useState(null);
+  const [form, setForm] = useState({
+    paciente: '',
+    convenio: '',
+    horario: '',
+    status: 'a_atender'
+  });
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleConfirm = () => {
+    if (editingCard) {
+      // Remover o card da coluna atual
+      setColumns((prev) =>
+        prev.map((col) => ({
+          ...col,
+          cards: col.cards.filter((c) => c.id !== editingCard.id)
+        }))
+      );
+
+      const updatedCard = {
+        ...editingCard,
+        text: `Paciente: ${form.paciente} | Convênio: ${form.convenio} | Horário: ${form.horario}`
+      };
+
+      setColumns((prev) =>
+        prev.map((col) =>
+          col.id === form.status
+            ? { ...col, cards: [...col.cards, updatedCard] }
+            : col
+        )
+      );
+    } else {
+      const newCard = {
+        id: Date.now(),
+        text: `Paciente: ${form.paciente} | Convênio: ${form.convenio} | Horário: ${form.horario}`
+      };
+
+      setColumns((prev) =>
+        prev.map((col) =>
+          col.id === form.status
+            ? { ...col, cards: [...col.cards, newCard] }
+            : col
+        )
+      );
+    }
+
+    setShowModal(false);
+    setEditingCard(null);
+    setForm({ paciente: '', convenio: '', horario: '', status: 'a_atender' });
+  };
+
+  const handleCardClick = (card, columnId) => {
+    const [paciente, convenio, horario] = card.text
+      .replace('Paciente: ', '')
+      .replace('Convênio: ', '')
+      .replace('Horário: ', '')
+      .split(' | ')
+      .map((str) => str.trim());
+
+    setEditingCard(card);
+    setForm({ paciente, convenio, horario, status: columnId });
+    setShowModal(true);
+  };
+
   return (
-    <>
-      <div className="flex flex-col bg-slate-900 w-full">
-        <div className="p-3 bg-black flex justify-between w-full bg-opacity-50">
-          <h2 className="text-lg">My Board</h2>
-          <div className="flex items-center justify-center">
-            <button className="bg-gray-200 h-8 text-gray-500 px-2 py-1 mr-2 rounded flex justify-center items-center hover:bg-gray-700">
-              <UserPlus size={16} className="mr-2"></UserPlus> Share
-            </button>
-            <button className="hover: bg-gray-700 px-2 py-1 h-8 rounded ">
-              <MoreHorizontal size={16}></MoreHorizontal> {/* ...*/}
-            </button>
-          </div>
-        </div>
-        <div className="flex flex-col w-full flex-grow relative">
-          <div className="absolute mb-1 pb-2 left-0 right-0 top-0 bottom-0 p-3 flex overflow-x-scroll overflow-y-hidden">
-            <div className="mr-3 w-60 h-fit rounded-md p-2 bg-black flex-shrink-0">
-              <div className="list body">
-                <div className="flex justify-between p-1">
-                  <span>To do</span>
-                  <button className="hover:bg-gray-500 p-1 rounded-sm">
-                    <MoreHorizontal size={16}></MoreHorizontal>
-                  </button>
-                </div>
-                <div className="item flex justify-between items-center bg-zinc-700 p-1 cursor-pointer rounded-md border-2 border-zin hover:border-gray-500">
-                  <span>Nome do projeto</span>
-                  <span className="flex justify-start items-start">
-                    <button className="hover:bg-gray-600 p-1 rounded-sm">
-                      <Edit2 size={16}></Edit2>
-                    </button>
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+
+  <>
+
+    <div className="flex flex-col bg-gray-100 w-full h-screen relative text-black">
+      {/* Header */}
+      <div className="p-3 bg-[#1d2125] text-white flex justify-between w-full">
+        
+
+        <h2 className="text-lg">NOME COOPERADO</h2>
+        <div className="flex items-center">
+          {/* <button className="bg-white text-gray-800 px-3 py-1 mr-2 rounded hover:bg-gray-300 flex items-center">
+            <UserPlus size={16} className="mr-2" /> Share
+          </button> */}
+          {/* <button className="hover:bg-gray-700 px-2 py-1 rounded">
+            <MoreHorizontal size={16} />
+          </button> */}
         </div>
       </div>
-    </>
+
+      {/* Kanban Columns */}
+      <div className="flex flex-grow p-4 space-x-4 overflow-x-auto bg-gray-200">
+        {columns.map((column) => (
+          <div key={column.id} className="w-72 bg-white rounded-md p-3 shadow">
+            <div className="flex justify-between items-center mb-2 border-b pb-1">
+              <h3 className="font-semibold">{column.title}</h3>
+              <button className="hover:bg-gray-200 p-1 rounded-sm">
+                <MoreHorizontal size={16} />
+              </button>
+            </div>
+            {column.cards.map((card) => (
+              <div
+                key={card.id}
+                onClick={() => handleCardClick(card, column.id)}
+                className="bg-gray-200 text-black p-2 mb-2 rounded-md flex justify-between items-center hover:bg-gray-300 cursor-pointer"
+              >
+                <span className="text-sm">{card.text}</span>
+                <Edit2 size={14} />
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Button p/ add card*/}
+      <button
+        onClick={() => {
+          setEditingCard(null);
+          setForm({ paciente: '', convenio: '', horario: '', status: 'a_atender' });
+          setShowModal(true);
+        }}
+        className="absolute bottom-4 right-4 bg-[#008d4c] hover:bg-green-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
+        title="Adicionar"
+      >
+        <Plus size={24} />
+      </button>
+
+      {/* Modal p/ add card */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+          <div className="bg-white p-8 rounded-md w-[600px] text-black shadow-lg">
+
+            <h3 className="text-lg font-semibold mb-4"> {editingCard ? 'Atendimento' : 'Novo Atendimento'} </h3>
+
+            <div className="space-y-3">
+              <input type="text" name="paciente" placeholder="Paciente" value={form.paciente} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded"/>
+              <select name="convenio" value={form.convenio} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded">
+                <option value="">Selecione um convênio</option>
+                {convenios.map((c) => (
+                  <option key={c.id} value={c.nome}>
+                  {c.razao_social}
+                  </option>
+                ))}
+              </select>
+              <input type="time" name="horario" placeholder="Horário"value={form.horario} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded" />
+              <select name="status" value={form.status} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded">
+                {columns.map((col) => (
+                  <option key={col.id} value={col.id}>
+                    {col.title}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mt-4 flex justify-end space-x-2">
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setEditingCard(null);
+                }}
+                className="px-4 py-2 bg-gray-300 hover:bg-gray-400 rounded"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirm}
+                className="px-4 py-2 rounded text-white"
+                style={{ backgroundColor: '#008d4c' }}
+              >
+                Confirmar
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+    </div>
+  </>
   );
+  
 }
