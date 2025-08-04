@@ -74,6 +74,7 @@ export default function Sidebar({ pacientes }) {
                   </select>
                   <button
                     className="mt-2 w-full bg-blue-600 text-white py-1 rounded hover:bg-blue-700"
+                    style={{ backgroundColor: '#008d4c' }}
                     onClick={handleAddBoard}
                     disabled={!selectedPacienteId}
                   >

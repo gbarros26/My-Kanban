@@ -1,29 +1,48 @@
 import './App.css';
-import Header from './components/Header';
-import Sidebar from './components/Sidebar';
-import Main from './components/Main';
+
+import DashboardLayout from './components/DashboardLayout';
+import Login from './components/Login';
 
 import { usePacientes } from './api/pacientes';
 import { useConvenios } from './api/convenios'; //
 
+
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+
 function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
+
   const { pacientes, loading, erro } = usePacientes();
   const { convenios, loading: loadingConvenios, erro: erroConvenios } = useConvenios();
 
-
-  if (loading || loadingConvenios) { return <div className="text-white p-4">Carregando convênios...</div>; }
-  if (erroConvenios) { return <div className="text-red-500 p-4">Erro ao carregar convênios: {erroConvenios}</div>; }
+  // DEBUG
+  // if (loading || loadingConvenios) { return <div className="text-white p-4">Carregando convênios...</div>; }
+  // if (erroConvenios) { return <div className="text-red-500 p-4">Erro ao carregar convênios: {erroConvenios}</div>; }
   
-  if (loading) return <div className="text-white p-4">Carregando pacientes...</div>;
-  if (erro) return <div className="text-red-500 p-4">Erro: {erro}</div>;
+  // if (loading) return <div className="text-white p-4">Carregando pacientes...</div>;
+  // if (erro) return <div className="text-red-500 p-4">Erro: {erro}</div>;
 
   return (
     <>
-      <Header />
-      <div className="content flex">
-        <Sidebar pacientes={pacientes} />
-        <Main pacientes={pacientes}  convenios={convenios}/>
-      </div>
+      <Router>
+        <Routes>
+          <Route path="/login" element={ isAuthenticated ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleLoginSuccess} /> } />
+          <Route path="/dashboard" element={
+              isAuthenticated ? (
+                <DashboardLayout pacientes={pacientes} convenios={convenios} />
+              ) : (
+                <Navigate to="/login" />
+              )
+            }
+          />
+          <Route path="/" element={<Navigate to={isAuthenticated ? '/dashboard' : '/login'} />} />
+        </Routes>
+      </Router>
     </>
   );
 }
