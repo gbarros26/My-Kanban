@@ -5,6 +5,7 @@ import Login from './components/Login';
 
 import { usePacientes } from './api/pacientes';
 import { useConvenios } from './api/convenios'; //
+import { useProcedimentos } from './api/procedimentos';
 
 
 import { useState } from 'react';
@@ -19,6 +20,7 @@ function App() {
 
   const { pacientes, loading, erro } = usePacientes();
   const { convenios, loading: loadingConvenios, erro: erroConvenios } = useConvenios();
+  const { procedimentos, loading: loadingProced, erro: erroProced } = useProcedimentos();
 
   // DEBUG
   // if (loading || loadingConvenios) { return <div className="text-white p-4">Carregando convênios...</div>; }
@@ -34,7 +36,7 @@ function App() {
           <Route path="/login" element={ isAuthenticated ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleLoginSuccess} /> } />
           <Route path="/dashboard" element={
               isAuthenticated ? (
-                <DashboardLayout pacientes={pacientes} convenios={convenios} />
+                <DashboardLayout pacientes={pacientes} convenios={convenios}  procedimentos={procedimentos} />
               ) : (
                 <Navigate to="/login" />
               )

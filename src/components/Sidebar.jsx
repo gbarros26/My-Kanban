@@ -1,9 +1,9 @@
 import { ChevronRight, ChevronLeft, Plus } from 'react-feather';
 import { useState } from 'react';
 
-export default function Sidebar({ pacientes }) {
+export default function Sidebar({ pacientes, onPacienteSelect }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [boards, setBoards] = useState([{ id: 1, name: 'Cooperado' }]);
+  const [boards, setBoards] = useState([{ id: 1, name: 'Cooperado', pacienteId: null }]);
   const [showSelect, setShowSelect] = useState(false);
   const [selectedPacienteId, setSelectedPacienteId] = useState('');
 
@@ -13,10 +13,18 @@ export default function Sidebar({ pacientes }) {
       const newBoard = {
         id: Date.now(),
         name: pacienteSelecionado.nome,
+        pacienteId: pacienteSelecionado.id,
       };
       setBoards([...boards, newBoard]);
       setShowSelect(false);
       setSelectedPacienteId('');
+    }
+  };
+
+  const handleBoardClick = (board) => {
+    const pacienteSelecionado = pacientes.find(p => p.id === board.pacienteId);
+    if (pacienteSelecionado) {
+      onPacienteSelect(pacienteSelecionado);
     }
   };
 
@@ -87,7 +95,7 @@ export default function Sidebar({ pacientes }) {
             <ul>
             {boards.map((board) => (
               <li key={board.id}>
-                <button className="px-3 py-2 w-full text-sm flex justify-start items-center hover:bg-gray-500">
+                <button onClick={() => handleBoardClick(board)} className="px-3 py-2 w-full text-sm flex justify-start items-center hover:bg-gray-500">
                   <span className="w-6 h-4 rounded-sm mr-2 bg-red-600">&nbsp;</span>
                   <span>{board.name}</span>
                 </button>

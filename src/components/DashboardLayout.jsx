@@ -1,15 +1,21 @@
-// src/components/DashboardLayout.jsx
 import Header from './Header';
 import Sidebar from './Sidebar';
 import Main from './Main';
+import { useState } from 'react';
 
-export default function DashboardLayout({ pacientes, convenios }) {
+export default function DashboardLayout({ pacientes, convenios, procedimentos }) {
+  const [pacienteSelecionado, setPacienteSelecionado] = useState(null);
+
+  const handlePacienteSelect = (paciente) => {
+    setPacienteSelecionado(paciente);
+  };
+
   return (
     <>
       <Header />
       <div className="content flex">
-        <Sidebar pacientes={pacientes} />
-        <Main pacientes={pacientes} convenios={convenios} />
+        <Sidebar pacientes={pacientes} onPacienteSelect={handlePacienteSelect} />
+        <Main pacientes={pacientes} convenios={convenios} pacienteSelecionado={pacienteSelecionado} procedimentos={procedimentos}/>
       </div>
     </>
   );

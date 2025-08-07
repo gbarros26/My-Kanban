@@ -1,10 +1,10 @@
 import { MoreHorizontal, UserPlus, Edit2, Plus } from 'react-feather';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import DateFilter from './DateFilter';
+import ProcedimentoFilter from './ProcedimentoFilter';
 
-
-export default function Main({convenios}) {
+export default function Main({ convenios, pacienteSelecionado, procedimentos }) {
   const [columns, setColumns] = useState([
    
     { id: 'agendados', title: 'AGENDADOS', cards: [] },
@@ -12,14 +12,20 @@ export default function Main({convenios}) {
     { id: 'atendidos', title: 'ATENDIDOS', cards: [] },
     { id: 'cancelado', title: 'CANCELADOS', cards: [] },
   ]);
-
+    // PACIENTE2 É O PACIENTE CERTO E PACIENTE É O NOME DO COOPERADO, ISSO PRECISA SER CORRIGIDO
   const [showModal, setShowModal] = useState(false);
   const [editingCard, setEditingCard] = useState(null);
   const [form, setForm] = useState({
     paciente: '',
+    paciente2: '',
     convenio: '',
     horario: '',
     status: 'agendados'
+  });
+
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
   });
 
   const handleChange = (e) => {
@@ -27,35 +33,28 @@ export default function Main({convenios}) {
   };
 
   const handleConfirm = () => {
+    if (!pacienteSelecionado) {
+      alert("Selecione um cooperado antes de adicionar um card.");
+      return;
+    }
+
+    const newCard = {
+      id: editingCard ? editingCard.id : Date.now(),
+      text: `Paciente: ${form.paciente2}  | Convênio: ${form.convenio} | Horário: ${form.horario}`,
+      date: selectedDate,
+      pacienteId: pacienteSelecionado.id,
+    };
+
     if (editingCard) {
-      // Remover o card da coluna atual
+      // Atualiza card existente
       setColumns((prev) =>
         prev.map((col) => ({
           ...col,
-          cards: col.cards.filter((c) => c.id !== editingCard.id)
+          cards: col.cards.filter((c) => c.id !== editingCard.id).concat(col.id === form.status ? [newCard] : []),
         }))
       );
-
-      const updatedCard = {
-        ...editingCard,
-        text: `Paciente: ${form.paciente} | Convênio: ${form.convenio} | Horário: ${form.horario}`,
-        date: selectedDate
-      };
-
-      setColumns((prev) =>
-        prev.map((col) =>
-          col.id === form.status
-            ? { ...col, cards: [...col.cards, updatedCard] }
-            : col
-        )
-      );
     } else {
-      const newCard = {
-        id: Date.now(),
-        text: `Paciente: ${form.paciente} | Convênio: ${form.convenio} | Horário: ${form.horario}`,
-        date: selectedDate
-      };
-
+      // Adiciona novo card
       setColumns((prev) =>
         prev.map((col) =>
           col.id === form.status
@@ -71,23 +70,30 @@ export default function Main({convenios}) {
   };
 
   const handleCardClick = (card, columnId) => {
-    const [paciente, convenio, horario] = card.text
-      .replace('Paciente: ', '')
-      .replace('Convênio: ', '')
-      .replace('Horário: ', '')
+    const [paciente2, convenio, horario] = card.text
       .split(' | ')
-      .map((str) => str.trim());
+      .map((str) => str.trim())
+      .map((str) => {
+        if (str.startsWith('Paciente: ')) return str.replace('Paciente: ', '');
+        if (str.startsWith('Convênio: ')) return str.replace('Convênio: ', '');
+        if (str.startsWith('Horário: ')) return str.replace('Horário: ', '');
+        return str;
+      });
 
     setEditingCard(card);
-    setForm({ paciente, convenio, horario, status: columnId });
+    setForm({ paciente: '', paciente2, convenio, horario, status: columnId });
     setShowModal(true);
   };
 
-  const [selectedDate, setSelectedDate] = useState(() => {
-  const today = new Date();
-  return today.toISOString().split('T')[0]; // formato yyyy-mm-dd
-  });
-
+  // Auto-preencher o nome do cooperado quando for selecionado no Sidebar
+  useEffect(() => {
+    if (pacienteSelecionado) {
+      setForm((prev) => ({
+        ...prev,
+        paciente: pacienteSelecionado.nome,
+      }));
+    }
+  }, [pacienteSelecionado]);
 
   return (
 
@@ -98,7 +104,7 @@ export default function Main({convenios}) {
     <div className="p-3 bg-[#1d2125] text-white flex justify-between items-center w-full">
 
       {/* Esquerda: título */}
-      <h2 className="text-lg">NOME COOPERADO</h2>
+      <h2 className="text-lg">{pacienteSelecionado ? pacienteSelecionado.nome : 'Selecione um cooperado'}</h2>
 
       {/* Direita: filtro de data e botões */}
       <div className="flex items-center space-x-4">
@@ -129,10 +135,11 @@ export default function Main({convenios}) {
       </button>
     </div>
 
-    {/* Cards com scroll */}
     <div className="overflow-y-auto space-y-2" style={{ maxHeight: 'calc(100vh - 12rem)' }}>
       {column.cards
-        .filter((card) => !card.date || card.date === selectedDate)
+        .filter((card) =>(!card.date || card.date === selectedDate) &&
+            (!pacienteSelecionado || card.pacienteId === pacienteSelecionado.id)
+        )
         .map((card) => (
           <div
             key={card.id}
@@ -151,8 +158,9 @@ export default function Main({convenios}) {
       {/* Button p/ add card*/}
       <button
         onClick={() => {
+
           setEditingCard(null);
-          setForm({ paciente: '', convenio: '', horario: '', status: 'a_atender' });
+          setForm({ paciente: pacienteSelecionado.nome, convenio: '', horario: '', status: 'a_atender' });
           setShowModal(true);
         }}
         className="absolute bottom-4 right-4 bg-[#008d4c] hover:bg-green-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg"
@@ -165,11 +173,11 @@ export default function Main({convenios}) {
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-8 rounded-md w-[600px] text-black shadow-lg">
-
-            <h3 className="text-lg font-semibold mb-4"> {editingCard ? 'Atendimento' : 'Novo Atendimento'} </h3>
+            <h3 className="text-lg font-semibold mb-4">{editingCard ? 'Atendimento' : 'Novo Atendimento'}</h3>
 
             <div className="space-y-3">
-              <input type="text" name="paciente" placeholder="Paciente" value={form.paciente} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded"/>
+              <input type="hidden" name="paciente" onChange={handleChange} value={form.paciente}/>
+              <input type="text" name="paciente2" placeholder="Paciente"  onChange={handleChange} value={form.paciente2 || ""} className="w-full px-3 py-2 border border-gray-300 rounded"  />
               <select name="convenio" value={form.convenio} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded">
                 <option value="">Selecione um convênio</option>
                 {convenios.map((c) => (
@@ -178,7 +186,8 @@ export default function Main({convenios}) {
                   </option>
                 ))}
               </select>
-              <input type="time" name="horario" placeholder="Horário"value={form.horario} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded" />
+              <input type="time" name="horario" placeholder="Horário" value={form.horario} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded" />
+              <ProcedimentoFilter procedimentos={procedimentos} value={form.procedimentoCodigo} onChange={(val) => setForm((prev) => ({ ...prev, procedimentoCodigo: val }))} />
               <select name="status" value={form.status} onChange={handleChange} className="w-full px-3 py-2 border border-gray-300 rounded">
                 {columns.map((col) => (
                   <option key={col.id} value={col.id}>
